@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server';
-import { DEMO_CARS } from '@/lib/mock-data';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Plus } from 'lucide-react';
@@ -13,54 +12,32 @@ export default async function CarCalendarPage({ params }: PageProps) {
   const { id } = await params;
   const supabase = await createClient();
 
-  let car: any = null;
-  let blockedDates: any[] = [];
-  let activeBookings: any[] = [];
-
   const { data: fetchedCar } = await supabase
     .from('cars')
     .select('*')
     .eq('id', id)
     .single();
 
-  if (fetchedCar) {
-    car = fetchedCar;
-    const { data: blocks } = await supabase
-      .from('blocked_dates')
-      .select('*')
-      .eq('car_id', id)
-      .order('start_date', { ascending: true });
-    blockedDates = blocks || [];
-
-    const { data: bookings } = await supabase
-      .from('bookings')
-      .select('*')
-      .eq('car_id', id)
-      .in('status', ['confirmed', 'pending'])
-      .order('start_date', { ascending: true });
-    activeBookings = bookings || [];
-  } else {
-    car = DEMO_CARS.find((c) => c.id === id) || DEMO_CARS[0];
-    blockedDates = [
-      {
-        id: 'mock-block-1',
-        car_id: car.id,
-        start_date: '2026-11-12',
-        end_date: '2026-11-14',
-        reason: 'repairs',
-      },
-    ];
-    activeBookings = [
-      {
-        id: 'mock-booking-1',
-        car_id: car.id,
-        renter_name: 'Mark Villanueva',
-        start_date: '2026-11-05',
-        end_date: '2026-11-07',
-        status: 'confirmed',
-      },
-    ];
+  if (!fetchedCar) {
+    notFound();
   }
+
+  const car = fetchedCar;
+
+  const { data: blocks } = await supabase
+    .from('blocked_dates')
+    .select('*')
+    .eq('car_id', id)
+    .order('start_date', { ascending: true });
+  const blockedDates = blocks || [];
+
+  const { data: bookings } = await supabase
+    .from('bookings')
+    .select('*')
+    .eq('car_id', id)
+    .in('status', ['confirmed', 'pending'])
+    .order('start_date', { ascending: true });
+  const activeBookings = bookings || [];
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">

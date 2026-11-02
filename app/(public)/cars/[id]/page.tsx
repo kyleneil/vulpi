@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server';
-import { DEMO_CARS } from '@/lib/mock-data';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -68,11 +67,7 @@ export default async function CarDetailPage({ params, searchParams }: CarDetailP
       calendarRanges.push({ startDate: b.start_date, endDate: b.end_date, type: 'blocked' });
     });
   } else {
-    car = DEMO_CARS.find((c) => c.id === id) || DEMO_CARS[0];
-    calendarRanges = [
-      { startDate: '2026-11-12', endDate: '2026-11-14', type: 'blocked' },
-      { startDate: '2026-11-05', endDate: '2026-11-07', type: 'booked' },
-    ];
+    notFound();
   }
 
   const dailyRate = destination === 'outside_cdo' && car.daily_rate_out_of_city

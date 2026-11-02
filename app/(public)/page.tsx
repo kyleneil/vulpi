@@ -3,25 +3,19 @@ import { Mascot } from '@/components/brand/Mascot';
 import { SearchForm } from '@/components/renter/SearchForm';
 import { CarCard } from '@/components/renter/CarCard';
 import { createClient } from '@/lib/supabase/server';
-import { DEMO_CARS } from '@/lib/mock-data';
 import { CAR_TYPES, APP_CONFIG } from '@/lib/constants';
 import { ShieldCheck, Clock, CheckCircle2, PhoneCall, Sparkles, ArrowRight } from 'lucide-react';
 
 export default async function HomePage() {
   const supabase = await createClient();
 
-  let featuredCars = [];
   const { data: cars } = await supabase
     .from('cars')
     .select('*, owner:owners(*)')
     .eq('is_active', true)
     .limit(4);
 
-  if (cars && cars.length > 0) {
-    featuredCars = cars;
-  } else {
-    featuredCars = DEMO_CARS.slice(0, 4);
-  }
+  const featuredCars = cars || [];
 
   return (
     <div className="space-y-16 pb-16">

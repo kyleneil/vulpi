@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { DEMO_CARS } from '@/lib/mock-data';
+import { notFound } from 'next/navigation';
 import { Mascot } from '@/components/brand/Mascot';
 import { formatPHP, formatDateRangePH } from '@/lib/formatters';
 import Link from 'next/link';
@@ -23,29 +23,17 @@ export default async function RequestConfirmationPage({ params }: ConfirmationPa
   const { id } = await params;
   const supabase = await createClient();
 
-  let booking: any = null;
-
   const { data: fetchedBooking } = await supabase
     .from('bookings')
     .select('*, car:cars(*, owner:owners(*))')
     .eq('id', id)
     .single();
 
-  if (fetchedBooking) {
-    booking = fetchedBooking;
-  } else {
-    const demoCar = DEMO_CARS[0];
-    booking = {
-      id,
-      renter_name: 'Maria Santos',
-      start_date: '2026-11-05',
-      end_date: '2026-11-07',
-      destination_type: 'within_cdo',
-      estimated_total: 4800,
-      hold_expires_at: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
-      car: demoCar,
-    };
+  if (!fetchedBooking) {
+    notFound();
   }
+
+  const booking = fetchedBooking;
 
   const owner = booking.car?.owner;
   const cleanPhone = owner?.phone?.replace(/\s+/g, '') || '';

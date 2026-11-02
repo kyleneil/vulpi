@@ -1,10 +1,9 @@
 import { createClient } from '@/lib/supabase/server';
-import { DEMO_CARS } from '@/lib/mock-data';
 import { updateCarAction, toggleCarActiveAction } from '@/app/actions/owner-cars';
 import { CAR_TYPES } from '@/lib/constants';
 import Link from 'next/link';
 import { ArrowLeft, Save, PauseCircle, PlayCircle } from 'lucide-react';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -14,19 +13,17 @@ export default async function EditCarPage({ params }: PageProps) {
   const { id } = await params;
   const supabase = await createClient();
 
-  let car: any = null;
-
   const { data: fetchedCar } = await supabase
     .from('cars')
     .select('*')
     .eq('id', id)
     .single();
 
-  if (fetchedCar) {
-    car = fetchedCar;
-  } else {
-    car = DEMO_CARS.find((c) => c.id === id) || DEMO_CARS[0];
+  if (!fetchedCar) {
+    notFound();
   }
+
+  const car = fetchedCar;
 
   async function handleUpdate(formData: FormData) {
     'use server';

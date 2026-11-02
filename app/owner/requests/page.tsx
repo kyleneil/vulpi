@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-import { DEMO_CARS } from '@/lib/mock-data';
+import { redirect } from 'next/navigation';
 import { formatPHP, formatDateRangePH } from '@/lib/formatters';
 import { Clock, CheckCircle2, XCircle, ArrowRight, Phone } from 'lucide-react';
 import { differenceInHours } from 'date-fns';
@@ -14,53 +14,36 @@ export default async function OwnerRequestsPage({
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  if (!user) {
+    redirect('/login');
+  }
+
   let bookings: any[] = [];
 
-  if (user) {
-    const { data: owner } = await supabase
-      .from('owners')
-      .select('id, cars(id)')
-      .eq('user_id', user.id)
-      .single();
+  const { data: owner } = await supabase
+    .from('owners')
+    .select('id, cars(id)')
+    .eq('user_id', user.id)
+    .single();
 
-    const typedOwner = owner as any;
-    if (typedOwner && typedOwner.cars && typedOwner.cars.length > 0) {
-      const carIds = typedOwner.cars.map((c: { id: string }) => c.id);
-      let query = supabase
-        .from('bookings')
-        .select('*, car:cars(*)')
-        .in('car_id', carIds);
+  const typedOwner = owner as any;
+  if (typedOwner && typedOwner.cars && typedOwner.cars.length > 0) {
+    const carIds = typedOwner.cars.map((c: { id: string }) => c.id);
+    let query = supabase
+      .from('bookings')
+      .select('*, car:cars(*)')
+      .in('car_id', carIds);
 
-      if (tab === 'pending') {
-        query = query.eq('status', 'pending');
-      } else if (tab === 'confirmed') {
-        query = query.eq('status', 'confirmed');
-      } else {
-        query = query.in('status', ['completed', 'declined', 'cancelled', 'expired']);
-      }
-
-      const { data } = await query.order('created_at', { ascending: false });
-      bookings = data || [];
+    if (tab === 'pending') {
+      query = query.eq('status', 'pending');
+    } else if (tab === 'confirmed') {
+      query = query.eq('status', 'confirmed');
+    } else {
+      query = query.in('status', ['completed', 'declined', 'cancelled', 'expired']);
     }
-  } else {
-    // Mock sample bookings
-    bookings = [
-      {
-        id: 'mock-req-1',
-        car_id: DEMO_CARS[0].id,
-        renter_name: 'Mark Villanueva',
-        renter_phone: '+63 917 555 1234',
-        renter_email: 'mark.v@example.ph',
-        start_date: '2026-11-05',
-        end_date: '2026-11-07',
-        destination_type: 'within_cdo',
-        with_driver: false,
-        estimated_total: 4800,
-        status: tab === 'pending' ? 'pending' : tab === 'confirmed' ? 'confirmed' : 'completed',
-        hold_expires_at: new Date(Date.now() + 18 * 3600 * 1000).toISOString(),
-        car: DEMO_CARS[0],
-      },
-    ];
+
+    const { data } = await query.order('created_at', { ascending: false });
+    bookings = data || [];
   }
 
   return (

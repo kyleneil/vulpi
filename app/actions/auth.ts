@@ -116,18 +116,41 @@ export async function updateOwnerProfileAction(formData: FormData) {
     return { error: 'You must be signed in to update your profile.' };
   }
 
-  const { error } = await (supabase.from('owners') as any)
-    .update({
+  // Check if owner profile exists, if not insert, else update
+  const { data: existingOwner } = await supabase
+    .from('owners')
+    .select('id')
+    .eq('user_id', user.id)
+    .single();
+
+  if (existingOwner) {
+    const { error } = await (supabase.from('owners') as any)
+      .update({
+        name_or_business: nameOrBusiness,
+        phone,
+        pickup_location: pickupLocation,
+        messenger_link: messengerLink || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('user_id', user.id);
+
+    if (error) {
+      return { error: error.message };
+    }
+  } else {
+    const { error } = await (supabase.from('owners') as any).insert({
+      user_id: user.id,
       name_or_business: nameOrBusiness,
       phone,
+      email: user.email || '',
       pickup_location: pickupLocation,
       messenger_link: messengerLink || null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('user_id', user.id);
+      is_verified: false,
+    });
 
-  if (error) {
-    return { error: error.message };
+    if (error) {
+      return { error: error.message };
+    }
   }
 
   return { success: 'Profile details saved successfully!' };

@@ -8,28 +8,27 @@ export default async function OwnerSettingsPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  let owner: any = null;
-
-  if (user) {
-    const { data } = await supabase
-      .from('owners')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
-    owner = data;
+  if (!user) {
+    redirect('/login');
   }
 
-  // Fallback defaults if in demo preview
-  if (!owner) {
-    owner = {
-      name_or_business: 'Vulpi CDO Fleet Admin',
-      email: user?.email || 'admin@vulpi.ph',
-      phone: '+63 917 123 4567',
-      pickup_location: 'SM City Uptown / Pueblo de Oro, Cagayan de Oro City',
-      messenger_link: 'https://m.me/vulpi.ph',
-      is_verified: true,
-    };
-  }
+  const { data } = await supabase
+    .from('owners')
+    .select('*')
+    .eq('user_id', user.id)
+    .single();
+
+  const owner = data || {
+    name_or_business: user.user_metadata?.name || user.email?.split('@')[0] || 'Car Rental Partner',
+    email: user.email,
+    phone: '',
+    pickup_location: 'Cagayan de Oro City',
+    messenger_link: '',
+    is_verified: false,
+  };
+
+  const adminEmail = (process.env.ADMIN_EMAIL || 'admin@vulpi.ph').toLowerCase().trim();
+  const isAdmin = (user.email || '').toLowerCase().trim() === adminEmail;
 
   return (
     <div className="space-y-8 max-w-4xl">
@@ -40,7 +39,7 @@ export default async function OwnerSettingsPage() {
         </p>
       </div>
 
-      <SettingsClient owner={owner} userEmail={user?.email || owner.email} />
+      <SettingsClient owner={owner} userEmail={user.email || owner.email} isAdmin={isAdmin} />
     </div>
   );
 }

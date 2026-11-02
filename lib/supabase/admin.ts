@@ -1,12 +1,12 @@
 import { createClient as createSupabaseClient, SupabaseClient } from '@supabase/supabase-js';
 
 export function createAdminClient(): SupabaseClient<any> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://demo-vulpi.supabase.co';
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   const rawKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const isPlaceholder = !rawKey || rawKey.includes('your-') || rawKey.length < 30;
   const serviceRoleKey = !isPlaceholder
     ? rawKey!
-    : (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'demo-service-key');
+    : (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '');
 
   return createSupabaseClient(supabaseUrl, serviceRoleKey, {
     auth: {

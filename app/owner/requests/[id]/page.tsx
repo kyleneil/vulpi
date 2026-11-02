@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getPresignedViewUrl } from '@/lib/storage/r2';
-import { DEMO_CARS, DEMO_OWNERS } from '@/lib/mock-data';
+import { notFound, redirect } from 'next/navigation';
 import { RequestActionButtons } from '@/components/owner/RequestActionButtons';
 import { formatPHP, formatDateRangePH, calculateRentalDays } from '@/lib/formatters';
 import Link from 'next/link';
@@ -51,27 +51,7 @@ export default async function RequestDetailPage({ params }: PageProps) {
       }
     }
   } else {
-    // Mock sample request
-    const demoCar = DEMO_CARS[0];
-    booking = {
-      id,
-      car_id: demoCar.id,
-      renter_name: 'Mark Villanueva',
-      renter_phone: '+63 917 555 1234',
-      renter_email: 'mark.v@example.ph',
-      start_date: '2026-11-05',
-      end_date: '2026-11-07',
-      destination_type: 'within_cdo',
-      destination_details: 'Airport pickup to Pueblo de Oro hotel, then meetings around Limketkai.',
-      with_driver: false,
-      estimated_total: 4800,
-      status: 'pending',
-      hold_expires_at: new Date(Date.now() + 18 * 3600 * 1000).toISOString(),
-      license_photo_path: null,
-      terms_accepted_at: new Date().toISOString(),
-      owner_note: null,
-      car: demoCar,
-    };
+    notFound();
   }
 
   const days = calculateRentalDays(booking.start_date, booking.end_date);

@@ -8,9 +8,10 @@ import Link from 'next/link';
 interface SettingsClientProps {
   owner: any;
   userEmail: string;
+  isAdmin?: boolean;
 }
 
-export function SettingsClient({ owner, userEmail }: SettingsClientProps) {
+export function SettingsClient({ owner, userEmail, isAdmin = false }: SettingsClientProps) {
   // Password state
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [passwordError, setPasswordError] = useState('');
@@ -220,28 +221,30 @@ export function SettingsClient({ owner, userEmail }: SettingsClientProps) {
         </form>
       </div>
 
-      {/* Admin Panel Quick Link */}
-      <div className="bg-[#FFF4E6] p-6 rounded-3xl border border-[#F0DFC8] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center text-[#E8772E] shadow-xs">
-            <Shield className="w-5 h-5" />
+      {/* Admin Panel Link (Only visible to verified platform administrator) */}
+      {isAdmin && (
+        <div className="bg-[#FFF4E6] p-6 rounded-3xl border border-[#F0DFC8] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center text-[#E8772E] shadow-xs">
+              <Shield className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-[#3B2216]">Vulpi Admin Portal</h3>
+              <p className="text-xs text-[#735340]">
+                Access full marketplace fleet management, bookings overview, and partner verification.
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="font-bold text-sm text-[#3B2216]">Vulpi Admin Portal</h3>
-            <p className="text-xs text-[#735340]">
-              Access full marketplace fleet management, bookings overview, and partner verification.
-            </p>
-          </div>
-        </div>
 
-        <Link
-          href="/admin"
-          className="h-10 px-5 rounded-full bg-[#3B2216] hover:bg-[#25150E] text-white text-xs font-bold flex items-center gap-2 shrink-0 transition-all self-start sm:self-auto cursor-pointer"
-        >
-          <span>Open Admin Panel</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </Link>
-      </div>
+          <Link
+            href="/admin"
+            className="h-10 px-5 rounded-full bg-[#3B2216] hover:bg-[#25150E] text-white text-xs font-bold flex items-center gap-2 shrink-0 transition-all self-start sm:self-auto cursor-pointer"
+          >
+            <span>Open Admin Panel</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

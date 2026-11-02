@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { DEMO_CARS } from '@/lib/mock-data';
 import { CarWithOwner } from '@/types';
 import { CarType, DestinationType } from '@/types/database';
 import { addDays, subDays, format, parseISO, isBefore } from 'date-fns';
@@ -98,7 +97,6 @@ export async function checkCarAvailability(
 
 /**
  * Search cars that are active and strictly free for the requested date range.
- * Falls back to seeded DEMO_CARS if Supabase tables are not yet migrated.
  */
 export async function searchAvailableCars(params: {
   startDate?: string;
@@ -143,11 +141,10 @@ export async function searchAvailableCars(params: {
       );
     }
   } catch (err) {
-    // Ignore and use demo cars
+    // Return empty live cars
   }
 
-  // Fallback to Demo Cars if Supabase has not yet been seeded
-  const baseCars = liveCars || filterDemoCars(params);
+  const baseCars = liveCars || [];
 
   // If no dates specified, return all active cars sorted
   if (!params.startDate || !params.endDate) {
@@ -196,25 +193,6 @@ export async function searchAvailableCars(params: {
   }
 
   return sortCars(baseCars, params.sortBy, params.destination);
-}
-
-function filterDemoCars(params: {
-  carType?: string;
-  transmission?: string;
-  seats?: number;
-}): CarWithOwner[] {
-  return DEMO_CARS.filter((car) => {
-    if (params.carType && params.carType !== 'all' && car.car_type !== params.carType) {
-      return false;
-    }
-    if (params.transmission && params.transmission !== 'all' && car.transmission !== params.transmission) {
-      return false;
-    }
-    if (params.seats && car.seats < params.seats) {
-      return false;
-    }
-    return true;
-  });
 }
 
 function sortCars(cars: CarWithOwner[], sortBy?: string, destination?: DestinationType): CarWithOwner[] {

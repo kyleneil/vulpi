@@ -5,8 +5,8 @@ import { SupabaseClient } from '@supabase/supabase-js';
 export async function createClient(): Promise<SupabaseClient<any>> {
   const cookieStore = await cookies();
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://demo-vulpi.supabase.co';
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'demo-anon-key';
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
   return createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {

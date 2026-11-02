@@ -1,5 +1,4 @@
 import { searchAvailableCars, findNearestAvailableDates } from '@/lib/availability/query';
-import { DEMO_CARS } from '@/lib/mock-data';
 import { CarCard } from '@/components/renter/CarCard';
 import { SearchForm } from '@/components/renter/SearchForm';
 import { NearestAvailableDates } from '@/components/renter/NearestAvailableDates';
@@ -39,11 +38,6 @@ export default async function CarsSearchPage({ searchParams }: SearchPageProps) 
     seats,
     sortBy,
   });
-
-  // Demo fallback if database not yet migrated
-  if (cars.length === 0 && (!startDate || !endDate)) {
-    cars = DEMO_CARS;
-  }
 
   // Nearest available dates suggestion algorithm if a specific car type was searched and none found
   let nearestSuggestions = undefined;

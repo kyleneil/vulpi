@@ -5,7 +5,7 @@ import { loginAction } from '@/app/actions/auth';
 import { Logo } from '@/components/brand/Logo';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { LogIn, AlertCircle, Sparkles, UserPlus } from 'lucide-react';
+import { LogIn, AlertCircle, UserPlus } from 'lucide-react';
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -32,10 +32,6 @@ function LoginForm() {
     }
   };
 
-  const handleDemoSignIn = () => {
-    router.push(redirectUrl);
-  };
-
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -57,7 +53,7 @@ function LoginForm() {
           <div>
             <span className="block font-bold">{errorMessage}</span>
             <span className="text-[11px] opacity-80 mt-0.5 block">
-              If you haven't created an owner account yet, click <Link href="/signup" className="underline font-bold">Register your cars</Link> below or use Instant Demo Access.
+              If you haven't created an owner account yet, click <Link href="/signup" className="underline font-bold">Register your cars</Link> below to get started.
             </span>
           </div>
         </div>
@@ -99,18 +95,6 @@ function LoginForm() {
           {isSubmitting ? 'Signing in...' : 'Sign In'}
         </button>
       </form>
-
-      {/* Quick Demo Mode Bypass */}
-      <div className="pt-2">
-        <button
-          type="button"
-          onClick={handleDemoSignIn}
-          className="w-full h-12 rounded-full bg-[#FAF0E4] hover:bg-[#F0DFC8] border border-[#F0DFC8] text-[#3B2216] font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
-        >
-          <Sparkles className="w-4 h-4 text-[#E8772E]" />
-          Instant Demo Owner Access
-        </button>
-      </div>
 
       <div className="pt-4 border-t border-[#F0DFC8]/60 text-center space-y-2">
         <p className="text-xs text-[#735340]">

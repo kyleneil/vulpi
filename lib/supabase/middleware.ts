@@ -6,8 +6,8 @@ export async function updateSession(request: NextRequest) {
     request,
   });
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://demo-vulpi.supabase.co';
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'demo-anon-key';
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
@@ -33,13 +33,24 @@ export async function updateSession(request: NextRequest) {
   const isOwnerRoute = request.nextUrl.pathname.startsWith('/owner');
   const isAdminRoute = request.nextUrl.pathname.startsWith('/admin');
 
-  // If user is not authenticated and attempts to access owner or admin area
+  // 1. Strict Authentication Guard: Unauthenticated users cannot access owner or admin areas
   if (!user && (isOwnerRoute || isAdminRoute)) {
-    // Only enforce redirect if Supabase credentials are configured, else allow demo browsing
-    if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('demo')) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/login';
+    if (isAdminRoute) {
+      url.searchParams.set('admin', 'true');
+    }
+    url.searchParams.set('redirect', request.nextUrl.pathname);
+    return NextResponse.redirect(url);
+  }
+
+  // 2. Strict Role Guard: Only verified admin email can access /admin
+  if (user && isAdminRoute) {
+    const adminEmail = (process.env.ADMIN_EMAIL || 'admin@vulpi.ph').toLowerCase().trim();
+    const userEmail = (user.email || '').toLowerCase().trim();
+    if (userEmail !== adminEmail) {
       const url = request.nextUrl.clone();
-      url.pathname = '/login';
-      url.searchParams.set('redirect', request.nextUrl.pathname);
+      url.pathname = '/owner/dashboard';
       return NextResponse.redirect(url);
     }
   }

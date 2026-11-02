@@ -89,7 +89,7 @@ RESEND_FROM_EMAIL=Vulpi Car Rentals <notifications@vulpi.ph>
 BOOKING_HOLD_HOURS=24
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
-*(Note: If Supabase credentials are not provided initially, Vulpi gracefully runs in Demo Mode with preloaded CDO seed data so you can test all features right away).*
+*(Note: Connect your Supabase instance to load and manage live CDO vehicle fleet data).*
 
 ### 3. Supabase Database Setup & Seed
 1. Go to your Supabase SQL Editor.

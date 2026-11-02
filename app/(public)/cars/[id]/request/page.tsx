@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server';
-import { DEMO_CARS } from '@/lib/mock-data';
 import { notFound } from 'next/navigation';
 import { RequestFormClient } from './request-form';
 import { STARTER_TERMS_TEMPLATE } from '@/lib/constants';
@@ -51,11 +50,7 @@ export default async function CarRequestPage({ params, searchParams }: RequestPa
       disabledRanges.push({ startDate: b.start_date, endDate: b.end_date, reason: b.reason || 'Owner blocked' });
     });
   } else {
-    car = DEMO_CARS.find((c) => c.id === id) || DEMO_CARS[0];
-    disabledRanges.push(
-      { startDate: '2026-11-12', endDate: '2026-11-14', reason: 'Owner maintenance' },
-      { startDate: '2026-11-05', endDate: '2026-11-07', reason: 'Booked' }
-    );
+    notFound();
   }
 
   const termsText = car.owner?.terms_text || STARTER_TERMS_TEMPLATE;

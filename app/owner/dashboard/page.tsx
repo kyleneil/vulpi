@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-import { DEMO_CARS, DEMO_OWNERS } from '@/lib/mock-data';
+import { redirect } from 'next/navigation';
 import { formatPHP, formatDateRangePH } from '@/lib/formatters';
 import { Car, Clock, Plus, ArrowRight, ShieldCheck, Phone } from 'lucide-react';
 import { differenceInHours } from 'date-fns';
@@ -9,53 +9,36 @@ export default async function OwnerDashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  if (!user) {
+    redirect('/login');
+  }
+
   let cars: any[] = [];
   let pendingRequests: any[] = [];
   let ownerName = 'Partner Owner';
 
-  if (user) {
-    const { data: owner } = await supabase
-      .from('owners')
-      .select('*, cars(*)')
-      .eq('user_id', user.id)
-      .single();
+  const { data: owner } = await supabase
+    .from('owners')
+    .select('*, cars(*)')
+    .eq('user_id', user.id)
+    .single();
 
-    if (owner) {
-      const typedOwner = owner as any;
-      ownerName = typedOwner.name_or_business;
-      cars = typedOwner.cars || [];
+  if (owner) {
+    const typedOwner = owner as any;
+    ownerName = typedOwner.name_or_business;
+    cars = typedOwner.cars || [];
 
-      const carIds = cars.map((c: { id: string }) => c.id);
-      if (carIds.length > 0) {
-        const { data: requests } = await supabase
-          .from('bookings')
-          .select('*, car:cars(*)')
-          .in('car_id', carIds)
-          .eq('status', 'pending')
-          .order('created_at', { ascending: false });
+    const carIds = cars.map((c: { id: string }) => c.id);
+    if (carIds.length > 0) {
+      const { data: requests } = await supabase
+        .from('bookings')
+        .select('*, car:cars(*)')
+        .in('car_id', carIds)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
 
-        pendingRequests = requests || [];
-      }
+      pendingRequests = requests || [];
     }
-  } else {
-    // Demo fallback mode for instant previews
-    cars = DEMO_CARS.filter(c => c.owner_id === DEMO_OWNERS[0].id);
-    ownerName = DEMO_OWNERS[0].name_or_business;
-    pendingRequests = [
-      {
-        id: 'demo-req-1',
-        car_id: DEMO_CARS[0].id,
-        renter_name: 'Mark Villanueva',
-        renter_phone: '+63 917 555 1234',
-        start_date: '2026-11-05',
-        end_date: '2026-11-07',
-        destination_type: 'within_cdo',
-        estimated_total: 4800,
-        status: 'pending',
-        hold_expires_at: new Date(Date.now() + 18 * 3600 * 1000).toISOString(),
-        car: DEMO_CARS[0],
-      },
-    ];
   }
 
   return (

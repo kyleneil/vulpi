@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { DEMO_OWNERS } from '@/lib/mock-data';
+import { redirect } from 'next/navigation';
 import { STARTER_TERMS_TEMPLATE } from '@/lib/constants';
 import { TermsEditorClient } from './terms-editor';
 import { FileText } from 'lucide-react';
@@ -8,20 +8,20 @@ export default async function OwnerTermsPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  if (!user) {
+    redirect('/login');
+  }
+
   let initialTerms = STARTER_TERMS_TEMPLATE;
 
-  if (user) {
-    const { data: owner } = await supabase
-      .from('owners')
-      .select('terms_text')
-      .eq('user_id', user.id)
-      .single();
+  const { data: owner } = await supabase
+    .from('owners')
+    .select('terms_text')
+    .eq('user_id', user.id)
+    .single();
 
-    if ((owner as any)?.terms_text) {
-      initialTerms = (owner as any).terms_text;
-    }
-  } else {
-    initialTerms = DEMO_OWNERS[0].terms_text || STARTER_TERMS_TEMPLATE;
+  if ((owner as any)?.terms_text) {
+    initialTerms = (owner as any).terms_text;
   }
 
   return (

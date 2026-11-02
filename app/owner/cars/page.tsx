@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/server';
-import { DEMO_CARS, DEMO_OWNERS } from '@/lib/mock-data';
+import { redirect } from 'next/navigation';
 import { formatPHP } from '@/lib/formatters';
 import { getSafeCarPhoto } from '@/lib/constants';
 import { Plus, Calendar, Edit3, CheckCircle2, XCircle } from 'lucide-react';
@@ -10,25 +10,25 @@ export default async function OwnerCarsPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  if (!user) {
+    redirect('/login');
+  }
+
   let cars: any[] = [];
 
-  if (user) {
-    const { data: owner } = await supabase
-      .from('owners')
-      .select('id')
-      .eq('user_id', user.id)
-      .single();
+  const { data: owner } = await supabase
+    .from('owners')
+    .select('id')
+    .eq('user_id', user.id)
+    .single();
 
-    if (owner) {
-      const { data } = await supabase
-        .from('cars')
-        .select('*')
-        .eq('owner_id', owner.id)
-        .order('created_at', { ascending: false });
-      cars = data || [];
-    }
-  } else {
-    cars = DEMO_CARS.filter(c => c.owner_id === DEMO_OWNERS[0].id);
+  if (owner) {
+    const { data } = await supabase
+      .from('cars')
+      .select('*')
+      .eq('owner_id', owner.id)
+      .order('created_at', { ascending: false });
+    cars = data || [];
   }
 
   return (
