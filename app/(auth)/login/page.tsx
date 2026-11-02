@@ -52,9 +52,11 @@ function LoginForm() {
           <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
           <div>
             <span className="block font-bold">{errorMessage}</span>
-            <span className="text-[11px] opacity-80 mt-0.5 block">
-              If you haven't created an owner account yet, click <Link href="/signup" className="underline font-bold">Register your cars</Link> below to get started.
-            </span>
+            {!isAdmin && errorMessage.toLowerCase().includes('invalid') && (
+              <span className="text-[11px] opacity-80 mt-0.5 block">
+                Don't have an owner account yet? <Link href="/signup" className="underline font-bold">Register your car rental fleet</Link> to get started.
+              </span>
+            )}
           </div>
         </div>
       )}

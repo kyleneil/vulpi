@@ -6,31 +6,48 @@ import { STARTER_TERMS_TEMPLATE } from '@/lib/constants';
 import { isAdminEmail } from '@/lib/auth/admin';
 
 export async function loginAction(formData: FormData) {
-  const email = (formData.get('email') as string)?.trim().toLowerCase();
-  const password = (formData.get('password') as string)?.trim();
-  let redirectTo = (formData.get('redirect') as string);
+  try {
+    const email = (formData.get('email') as string)?.trim().toLowerCase();
+    const password = (formData.get('password') as string)?.trim();
+    let redirectTo = (formData.get('redirect') as string);
 
-  // If logging in as admin or from the footer admin login, route to /admin
-  if (!redirectTo || redirectTo === '/owner/dashboard') {
-    if (isAdminEmail(email)) {
-      redirectTo = '/admin';
-    } else {
-      redirectTo = '/owner/dashboard';
+    if (!email || !password) {
+      return { error: 'Please enter both your email address and password.' };
     }
+
+    // If logging in as admin, route directly to /admin
+    if (!redirectTo || redirectTo === '/owner/dashboard') {
+      if (isAdminEmail(email)) {
+        redirectTo = '/admin';
+      } else {
+        redirectTo = '/owner/dashboard';
+      }
+    }
+
+    const supabase = await createClient();
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      console.error('[Login Failed]', email, error.message);
+      return { error: error.message };
+    }
+
+    if (!data?.user) {
+      return { error: 'Authentication failed. Please verify your credentials.' };
+    }
+
+    redirect(redirectTo);
+  } catch (err: any) {
+    if (err?.message === 'NEXT_REDIRECT') {
+      throw err;
+    }
+    console.error('[Login Exception]', err);
+    return { error: err?.message || 'A network error occurred. Please try again.' };
   }
-
-  const supabase = await createClient();
-
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  redirect(redirectTo);
 }
 
 export async function signupAction(formData: FormData) {

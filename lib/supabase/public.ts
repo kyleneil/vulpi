@@ -1,4 +1,5 @@
 import { createClient as createSupabaseClient, SupabaseClient } from '@supabase/supabase-js';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config';
 
 let publicClient: SupabaseClient<any> | null = null;
 
@@ -7,11 +8,8 @@ let publicClient: SupabaseClient<any> | null = null;
  * Bypasses Next.js cookies() so pages can take full advantage of ISR and Edge CDN caching.
  */
 export function createPublicClient(): SupabaseClient<any> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key';
-
   if (!publicClient) {
-    publicClient = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
+    publicClient = createSupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: {
         autoRefreshToken: false,
         persistSession: false,
