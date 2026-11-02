@@ -33,16 +33,37 @@ export class NotificationService {
     if (isSmtpConfigured()) {
       const subject = `New Rental Request: ${payload.carMake} ${payload.carModel} (${dates})`;
       const html = `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #F0DFC8; border-radius: 12px; background: #FFFBF5; color: #3B2216;">
-          <h2 style="color: #E8772E;">New Car Rental Request</h2>
-          <p>Hello ${payload.ownerName}, you have a new request for your <strong>${payload.carYear} ${payload.carMake} ${payload.carModel}</strong>.</p>
-          <p><strong>Renter:</strong> ${payload.renterName} (${payload.renterPhone})</p>
-          <p><strong>Dates:</strong> ${dates}</p>
-          <p><strong>Total:</strong> ${total}</p>
-          <p><a href="${appUrl}/owner/requests/${payload.bookingId}" style="background: #E8772E; color: white; padding: 12px 24px; border-radius: 20px; text-decoration: none; font-weight: bold;">View & Confirm Request</a></p>
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #F0DFC8; border-radius: 16px; background: #FFFBF5; color: #3B2216;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <h2 style="color: #E8772E; margin: 0;">🦊 Vulpi — New Car Rental Request</h2>
+            <p style="color: #735340; font-size: 13px; margin-top: 4px;">Smart Rentals. Smooth Journeys. • Cagayan de Oro</p>
+          </div>
+          <p>Hello <strong>${payload.ownerName}</strong>,</p>
+          <p>You received a new booking request for your <strong>${payload.carYear} ${payload.carMake} ${payload.carModel}</strong>.</p>
+          <div style="background: #FFF; border: 1px solid #F0DFC8; border-radius: 12px; padding: 16px; margin: 16px 0;">
+            <p style="margin: 6px 0;"><strong>Renter Name:</strong> ${payload.renterName}</p>
+            <p style="margin: 6px 0;"><strong>Phone Number:</strong> <a href="tel:${payload.renterPhone}" style="color: #1AA3A3; font-weight: bold;">${payload.renterPhone}</a></p>
+            ${payload.renterEmail ? `<p style="margin: 6px 0;"><strong>Renter Email:</strong> ${payload.renterEmail}</p>` : ''}
+            <p style="margin: 6px 0;"><strong>Rental Dates:</strong> ${dates}</p>
+            <p style="margin: 6px 0;"><strong>Destination:</strong> ${payload.destination === 'within_cdo' ? 'Within CDO City' : 'Outside CDO (Bukidnon / Iligan / Highlands)'}</p>
+            <p style="margin: 6px 0;"><strong>Estimated Total:</strong> <span style="color: #E8772E; font-weight: bold; font-size: 16px;">${total}</span></p>
+          </div>
+          <div style="background: #FFF4E6; border-left: 4px solid #F5B82E; padding: 12px 16px; border-radius: 4px; margin-bottom: 20px;">
+            <p style="margin: 0; font-size: 13px;">
+              ⏳ <strong>24-Hour Hold Active:</strong> These dates are locked on your calendar until you accept or decline. Please reach out to the renter promptly.
+            </p>
+          </div>
+          <div style="text-align: center; margin: 24px 0;">
+            <a href="${appUrl}/owner/requests/${payload.bookingId}" style="background: #E8772E; color: white; padding: 14px 28px; border-radius: 30px; text-decoration: none; font-weight: bold; display: inline-block;">View & Confirm Request</a>
+          </div>
         </div>
       `;
       await sendEmailWithSmtp(payload.ownerEmail, subject, html);
+
+      const adminEmail = process.env.ADMIN_EMAIL;
+      if (adminEmail && adminEmail.toLowerCase() !== payload.ownerEmail.toLowerCase()) {
+        await sendEmailWithSmtp(adminEmail, `[Platform Copy] ${subject}`, html);
+      }
       return;
     }
 
