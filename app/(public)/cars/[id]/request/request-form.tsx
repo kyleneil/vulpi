@@ -19,9 +19,12 @@ import {
   X,
   Send,
   Lock,
+  Loader2,
+  CheckCircle2,
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { DateRangePicker, DisabledDateRange } from '@/components/renter/DateRangePicker';
+import { compressImageToWebP } from '@/lib/storage/compression';
 
 interface RequestFormClientProps {
   car: any;
@@ -54,6 +57,11 @@ export function RequestFormClient({
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
 
+  // License photo zero-egress R2 upload state
+  const [licenseR2Key, setLicenseR2Key] = useState<string | null>(null);
+  const [licenseStatus, setLicenseStatus] = useState<'idle' | 'compressing' | 'uploading' | 'done' | 'error'>('idle');
+  const [licenseFileName, setLicenseFileName] = useState<string>('');
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -67,6 +75,59 @@ export function RequestFormClient({
 
   const driverRate = withDriver && car.driver_fee ? car.driver_fee : 0;
   const estimatedTotal = (dailyRate + driverRate) * days;
+
+  const handleLicenseFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setLicenseFileName(file.name);
+    setLicenseStatus('compressing');
+
+    try {
+      // 1. Client-side compress to WebP (< 400KB)
+      const compressed = await compressImageToWebP(file, {
+        maxDimension: 1600,
+        quality: 0.85,
+      });
+
+      setLicenseStatus('uploading');
+
+      // 2. Request presigned upload URL for Cloudflare R2 private bucket
+      const presignRes = await fetch('/api/uploads/presigned', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bucketType: 'private',
+          prefix: 'licenses',
+          contentType: 'image/webp',
+          fileSize: compressed.file.size,
+        }),
+      });
+
+      if (presignRes.ok) {
+        const { uploadUrl, key } = await presignRes.json();
+
+        // 3. Direct upload to Cloudflare R2
+        const r2Res = await fetch(uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'image/webp' },
+          body: compressed.file,
+        });
+
+        if (r2Res.ok) {
+          setLicenseR2Key(key);
+          setLicenseStatus('done');
+          return;
+        }
+      }
+
+      // If R2 endpoint is not available, allow standard fallback via FormData upload
+      setLicenseStatus('idle');
+    } catch (err) {
+      console.warn('R2 direct license upload fallback:', err);
+      setLicenseStatus('idle');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -89,6 +150,10 @@ export function RequestFormClient({
     formData.set('destination_type', destinationType);
     formData.set('with_driver', String(withDriver));
     formData.set('terms_accepted', String(termsAccepted));
+
+    if (licenseR2Key) {
+      formData.set('license_key', licenseR2Key);
+    }
 
     const res = await createBookingRequestAction(formData);
     setIsSubmitting(false);
@@ -221,22 +286,48 @@ export function RequestFormClient({
           </div>
         </div>
 
-        {/* Optional Driver's License Upload */}
+        {/* Optional Driver's License Upload (Zero-Egress R2 & Client WebP Compression) */}
         <div className="space-y-2 pt-4 border-t border-[#F0DFC8]/60">
-          <label className="block text-xs font-bold uppercase text-[#735340]">
-            Driver's License Photo (Optional)
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="block text-xs font-bold uppercase text-[#735340]">
+              Driver's License Photo (Optional)
+            </label>
+            <span className="text-[11px] text-[#1AA3A3] font-semibold flex items-center gap-1">
+              <Lock className="w-3 h-3" /> Encrypted & Private
+            </span>
+          </div>
           <p className="text-xs text-[#735340]">
             Upload now for faster verification, or simply present it upon physical handover.
           </p>
-          <div className="relative border-2 border-dashed border-[#F0DFC8] rounded-2xl p-4 bg-[#FFFBF5] hover:border-[#1AA3A3] transition-colors flex items-center gap-3">
-            <UploadCloud className="w-6 h-6 text-[#1AA3A3] shrink-0" />
-            <input
-              type="file"
-              name="license_photo"
-              accept="image/*"
-              className="text-xs text-[#735340] file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#1AA3A3] file:text-white cursor-pointer"
-            />
+
+          <div className="relative border-2 border-dashed border-[#F0DFC8] rounded-2xl p-4 bg-[#FFFBF5] hover:border-[#1AA3A3] transition-colors flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <UploadCloud className="w-6 h-6 text-[#1AA3A3] shrink-0" />
+              <input
+                type="file"
+                name="license_photo"
+                accept="image/*"
+                onChange={handleLicenseFileChange}
+                className="text-xs text-[#735340] file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#1AA3A3] file:text-white cursor-pointer"
+              />
+            </div>
+
+            {/* Status indicator */}
+            {licenseStatus === 'compressing' && (
+              <span className="text-xs font-bold text-[#1AA3A3] flex items-center gap-1.5 bg-[#E8F6F6] px-3 py-1 rounded-full">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Optimizing WebP...
+              </span>
+            )}
+            {licenseStatus === 'uploading' && (
+              <span className="text-xs font-bold text-[#1AA3A3] flex items-center gap-1.5 bg-[#E8F6F6] px-3 py-1 rounded-full">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading to R2...
+              </span>
+            )}
+            {licenseStatus === 'done' && (
+              <span className="text-xs font-bold text-emerald-700 flex items-center gap-1 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Compressed & Ready
+              </span>
+            )}
           </div>
         </div>
 

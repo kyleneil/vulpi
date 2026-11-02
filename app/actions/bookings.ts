@@ -62,27 +62,33 @@ export async function createBookingRequestAction(formData: FormData) {
   const driverRate = withDriver && typedCar.driver_fee ? typedCar.driver_fee : 0;
   const estimatedTotal = (dailyRate + driverRate) * days;
 
-  // 4. Handle optional license photo upload
+  // 4. Handle optional license photo upload (Cloudflare R2 zero-egress priority, Supabase fallback)
   let licensePhotoPath: string | null = null;
-  const licenseFile = formData.get('license_photo') as File | null;
-  if (licenseFile && licenseFile.size > 0) {
-    try {
-      const adminClient = createAdminClient();
-      const fileExt = licenseFile.name.split('.').pop() || 'jpg';
-      const fileName = `${carId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+  const directR2Key = formData.get('license_key') as string | null;
 
-      const { data: uploadData, error: uploadErr } = await adminClient.storage
-        .from('licenses')
-        .upload(fileName, licenseFile, {
-          contentType: licenseFile.type,
-          upsert: false,
-        });
+  if (directR2Key && directR2Key.trim()) {
+    licensePhotoPath = directR2Key.trim();
+  } else {
+    const licenseFile = formData.get('license_photo') as File | null;
+    if (licenseFile && licenseFile.size > 0) {
+      try {
+        const adminClient = createAdminClient();
+        const fileExt = licenseFile.name.split('.').pop() || 'jpg';
+        const fileName = `${carId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-      if (!uploadErr && uploadData) {
-        licensePhotoPath = uploadData.path;
+        const { data: uploadData, error: uploadErr } = await adminClient.storage
+          .from('licenses')
+          .upload(fileName, licenseFile, {
+            contentType: licenseFile.type,
+            upsert: false,
+          });
+
+        if (!uploadErr && uploadData) {
+          licensePhotoPath = uploadData.path;
+        }
+      } catch (uploadError) {
+        console.warn('License upload skipped:', uploadError);
       }
-    } catch (uploadError) {
-      console.warn('License upload skipped:', uploadError);
     }
   }
 

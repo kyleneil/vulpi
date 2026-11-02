@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getPresignedViewUrl } from '@/lib/storage/r2';
 import { DEMO_CARS, DEMO_OWNERS } from '@/lib/mock-data';
 import { RequestActionButtons } from '@/components/owner/RequestActionButtons';
 import { formatPHP, formatDateRangePH, calculateRentalDays } from '@/lib/formatters';
@@ -28,14 +29,25 @@ export default async function RequestDetailPage({ params }: PageProps) {
   if (fetchedBooking) {
     booking = fetchedBooking;
 
-    // If a driver license photo path exists, generate a signed URL from the private bucket
+    // If a driver license photo path exists, generate a signed URL (Cloudflare R2 60s Zero-Egress or Supabase Storage)
     if (booking.license_photo_path) {
-      const adminClient = createAdminClient();
-      const { data: signedData } = await adminClient.storage
-        .from('licenses')
-        .createSignedUrl(booking.license_photo_path, 3600);
-      if (signedData) {
-        signedLicenseUrl = signedData.signedUrl;
+      // 1. Try Cloudflare R2 short-lived presigned URL (60 seconds)
+      const r2SignedUrl = await getPresignedViewUrl(booking.license_photo_path, 60);
+      if (r2SignedUrl) {
+        signedLicenseUrl = r2SignedUrl;
+      } else {
+        // 2. Fallback to Supabase Storage signed URL
+        try {
+          const adminClient = createAdminClient();
+          const { data: signedData } = await adminClient.storage
+            .from('licenses')
+            .createSignedUrl(booking.license_photo_path, 3600);
+          if (signedData) {
+            signedLicenseUrl = signedData.signedUrl;
+          }
+        } catch {
+          // Fallback ignored
+        }
       }
     }
   } else {
