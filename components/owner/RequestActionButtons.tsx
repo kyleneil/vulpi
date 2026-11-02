@@ -23,7 +23,9 @@ export function RequestActionButtons({
   const [declineReason, setDeclineReason] = useState('');
 
   const cleanPhone = renterPhone.replace(/\s+/g, '');
-  const smsBody = encodeURIComponent(`Hi ${renterName}! This is regarding your car rental request on Vulpi.`);
+  const smsBody = currentStatus === 'confirmed'
+    ? encodeURIComponent(`Hi ${renterName}! Your car rental booking on Vulpi is CONFIRMED. Let me know your estimated arrival time for vehicle handover!`)
+    : encodeURIComponent(`Hi ${renterName}! This is regarding your car rental request on Vulpi.`);
 
   const handleStatusChange = async (status: BookingStatus, note?: string) => {
     setIsUpdating(true);

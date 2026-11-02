@@ -60,8 +60,45 @@ export class NotificationService {
 
   async notifyStatusUpdate(payload: StatusUpdatedNotificationPayload): Promise<void> {
     console.log(`[Vulpi Notification] Status updated to "${payload.status}" for booking ${payload.bookingId}`);
+    
+    // 1. Telegram Push Notification
     if (isTelegramConfigured()) {
       await sendStatusUpdateTelegramAlert(payload);
+    }
+
+    // 2. Email notification to renter (if email was provided and SMTP is configured)
+    if (payload.renterEmail && isSmtpConfigured() && (payload.status === 'confirmed' || payload.status === 'declined')) {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const isConfirmed = payload.status === 'confirmed';
+      const subject = isConfirmed
+        ? `Booking Confirmed! 🚗 ${payload.carMake} ${payload.carModel} with ${payload.ownerName}`
+        : `Update on your rental request for ${payload.carMake} ${payload.carModel}`;
+
+      const html = isConfirmed
+        ? `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #F0DFC8; border-radius: 16px; background: #FFFBF5; color: #3B2216;">
+            <h2 style="color: #1AA3A3; margin-top: 0;">🎉 Your Booking is Confirmed!</h2>
+            <p>Hello <strong>${payload.renterName}</strong>, your car rental reservation for <strong>${payload.carMake} ${payload.carModel}</strong> has been officially confirmed by ${payload.ownerName}.</p>
+            <div style="background: #FFF; border: 1px solid #F0DFC8; border-radius: 12px; padding: 16px; margin: 16px 0;">
+              <p style="margin: 4px 0;"><strong>Host / Owner:</strong> ${payload.ownerName}</p>
+              <p style="margin: 4px 0;"><strong>Owner Phone:</strong> <a href="tel:${payload.ownerPhone}" style="color: #E8772E; font-weight: bold;">${payload.ownerPhone}</a></p>
+              <p style="margin: 4px 0;"><strong>Pickup Location:</strong> ${payload.pickupLocation}</p>
+              ${payload.ownerNote ? `<p style="margin: 4px 0;"><strong>Owner Note:</strong> ${payload.ownerNote}</p>` : ''}
+            </div>
+            <p><a href="${appUrl}/api/agreements/${payload.bookingId}" style="background: #E8772E; color: white; padding: 12px 24px; border-radius: 20px; text-decoration: none; font-weight: bold; display: inline-block;">Download Rental Agreement (PDF)</a></p>
+          </div>
+        `
+        : `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #F0DFC8; border-radius: 16px; background: #FFFBF5; color: #3B2216;">
+            <h2 style="color: #3B2216; margin-top: 0;">Update on your rental request</h2>
+            <p>Hello ${payload.renterName}, unfortunately ${payload.ownerName} was unable to accept your booking for the ${payload.carMake} ${payload.carModel} on the requested dates.</p>
+            ${payload.ownerNote ? `<p><strong>Reason:</strong> ${payload.ownerNote}</p>` : ''}
+            <p>You can browse other available cars in Cagayan de Oro on our marketplace:</p>
+            <p><a href="${appUrl}/cars" style="background: #1AA3A3; color: white; padding: 12px 24px; border-radius: 20px; text-decoration: none; font-weight: bold; display: inline-block;">Find Other Cars</a></p>
+          </div>
+        `;
+
+      await sendEmailWithSmtp(payload.renterEmail, subject, html);
     }
   }
 }

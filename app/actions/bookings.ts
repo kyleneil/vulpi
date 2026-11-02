@@ -163,12 +163,37 @@ export async function updateBookingStatusAction(
     updateData.owner_note = ownerNote;
   }
 
-  const { error } = await (supabase.from('bookings') as any)
+  const { data: booking, error } = await (supabase.from('bookings') as any)
     .update(updateData)
-    .eq('id', bookingId);
+    .eq('id', bookingId)
+    .select('*, car:cars(*, owner:owners(*))')
+    .single();
 
   if (error) {
     return { error: error.message };
+  }
+
+  // Trigger status update notifications (Telegram alert and email to renter)
+  if (booking && (newStatus === 'confirmed' || newStatus === 'declined' || newStatus === 'cancelled')) {
+    const typedBooking = booking as any;
+    const car = typedBooking.car;
+    const owner = car?.owner;
+
+    if (car && owner) {
+      await notificationService.notifyStatusUpdate({
+        bookingId,
+        carMake: car.make,
+        carModel: car.model,
+        renterName: typedBooking.renter_name,
+        renterEmail: typedBooking.renter_email,
+        renterPhone: typedBooking.renter_phone,
+        status: newStatus as any,
+        ownerName: owner.name_or_business,
+        ownerPhone: owner.phone,
+        ownerNote,
+        pickupLocation: owner.pickup_location,
+      });
+    }
   }
 
   revalidatePath('/owner/requests');
