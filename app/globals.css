@@ -1,26 +1,37 @@
 @import "tailwindcss";
 
+@theme {
+  --color-vulpi-orange: #E8772E;
+  --color-vulpi-orange-hover: #D4661E;
+  --color-vulpi-teal: #1AA3A3;
+  --color-vulpi-dark-teal: #0F7F82;
+  --color-vulpi-cream: #FFF4E6;
+  --color-vulpi-cream-light: #FFFBF5;
+  --color-vulpi-gold: #F5B82E;
+  --color-vulpi-brown: #3B2216;
+  --color-vulpi-muted: #735340;
+  --color-vulpi-border: #F0DFC8;
+  --color-vulpi-sand: #FAF0E4;
+
+  --font-sans: var(--font-poppins), 'Nunito', system-ui, -apple-system, sans-serif;
+
+  --shadow-vulpi-card: 0 4px 20px -2px rgba(59, 34, 22, 0.08);
+  --shadow-vulpi-float: 0 8px 30px -4px rgba(232, 119, 46, 0.25);
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: #FFFBF5;
+  --foreground: #3B2216;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom scrollbar and utilities */
+input, select, textarea, button {
+  font-family: inherit;
 }

@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="90 35 220 200" width="64" height="64" role="img" aria-label="Vulpi fox icon">
+  <!-- ears -->
+  <path d="M128 124 L110 44 L172 92 Z" fill="#E8772E"/>
+  <path d="M272 124 L290 44 L228 92 Z" fill="#E8772E"/>
+  <path d="M131 108 L122 68 L158 94 Z" fill="#3B2216"/>
+  <path d="M269 108 L278 68 L242 94 Z" fill="#3B2216"/>
+
+  <!-- head -->
+  <path d="M118 140 Q122 202 200 224 Q278 202 282 140 Q282 90 200 88 Q118 90 118 140 Z" fill="#E8772E"/>
+  <!-- white muzzle and cheeks -->
+  <path d="M200 224 Q130 206 124 160 Q160 178 200 174 Q240 178 276 160 Q270 206 200 224 Z" fill="#FFF4E6"/>
+  <!-- blush -->
+  <ellipse cx="142" cy="188" rx="12" ry="7" fill="#F4A58A" opacity="0.55"/>
+  <ellipse cx="258" cy="188" rx="12" ry="7" fill="#F4A58A" opacity="0.55"/>
+
+  <!-- driver's cap between the ears -->
+  <path d="M156 98 C156 54 244 54 244 98 Z" fill="#1AA3A3"/>
+  <path d="M146 100 Q200 118 254 100 Q252 92 242 95 L158 95 Q148 92 146 100 Z" fill="#0F7F82"/>
+  <circle cx="200" cy="79" r="11" fill="#F5B82E"/>
+  <circle cx="200" cy="79" r="6" fill="none" stroke="#0F7F82" stroke-width="2.2"/>
+  <path d="M200 73 V79 M194.5 82 L200 79 L205.5 82" stroke="#0F7F82" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+
+  <!-- brows -->
+  <path d="M148 132 Q166 124 184 132" fill="none" stroke="#3B2216" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M216 130 Q236 117 254 128" fill="none" stroke="#3B2216" stroke-width="4.5" stroke-linecap="round"/>
+
+  <!-- eyes -->
+  <ellipse cx="166" cy="154" rx="10" ry="13" fill="#2B1B0E"/>
+  <ellipse cx="234" cy="154" rx="10" ry="13" fill="#2B1B0E"/>
+  <circle cx="170" cy="149" r="3.5" fill="#FFFFFF"/>
+  <circle cx="238" cy="149" r="3.5" fill="#FFFFFF"/>
+
+  <!-- nose and smile -->
+  <ellipse cx="200" cy="198" rx="11" ry="8" fill="#2B1B0E"/>
+  <ellipse cx="196" cy="195" rx="3" ry="1.8" fill="#FFFFFF" opacity="0.7"/>
+  <path d="M200 206 V212 M200 212 Q188 220 176 212 M200 212 Q212 220 224 212" fill="none" stroke="#2B1B0E" stroke-width="3" stroke-linecap="round"/>
+</svg>
