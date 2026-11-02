@@ -98,16 +98,14 @@ CREATE TABLE IF NOT EXISTS public.blocked_dates (
   CONSTRAINT valid_block_date_range CHECK (end_date >= start_date)
 );
 
--- Ensure exclusion constraint exists on blocked_dates
-DO $$ BEGIN
-  ALTER TABLE public.blocked_dates
-    ADD CONSTRAINT no_overlapping_blocks EXCLUDE USING gist (
-      car_id WITH =,
-      daterange(start_date, end_date, '[]') WITH &&
-    );
-EXCEPTION
-  WHEN duplicate_object THEN null;
-END $$;
+-- Ensure exclusion constraint exists on blocked_dates (Idempotent: drops previous constraint/index if already present)
+ALTER TABLE public.blocked_dates DROP CONSTRAINT IF EXISTS no_overlapping_blocks;
+DROP INDEX IF EXISTS public.no_overlapping_blocks;
+ALTER TABLE public.blocked_dates
+  ADD CONSTRAINT no_overlapping_blocks EXCLUDE USING gist (
+    car_id WITH =,
+    daterange(start_date, end_date, '[]') WITH &&
+  );
 
 -- 6. BOOKINGS TABLE (With Anti-Double-Booking PostgreSQL Exclusion Constraint)
 CREATE TABLE IF NOT EXISTS public.bookings (
@@ -132,16 +130,14 @@ CREATE TABLE IF NOT EXISTS public.bookings (
   CONSTRAINT valid_booking_dates CHECK (end_date >= start_date)
 );
 
--- Ensure strict anti-double-booking exclusion constraint exists on bookings
-DO $$ BEGIN
-  ALTER TABLE public.bookings
-    ADD CONSTRAINT no_overlapping_active_bookings EXCLUDE USING gist (
-      car_id WITH =,
-      daterange(start_date, end_date, '[]') WITH &&
-    ) WHERE (status IN ('pending', 'confirmed'));
-EXCEPTION
-  WHEN duplicate_object THEN null;
-END $$;
+-- Ensure strict anti-double-booking exclusion constraint exists on bookings (Idempotent: drops previous constraint/index if already present)
+ALTER TABLE public.bookings DROP CONSTRAINT IF EXISTS no_overlapping_active_bookings;
+DROP INDEX IF EXISTS public.no_overlapping_active_bookings;
+ALTER TABLE public.bookings
+  ADD CONSTRAINT no_overlapping_active_bookings EXCLUDE USING gist (
+    car_id WITH =,
+    daterange(start_date, end_date, '[]') WITH &&
+  ) WHERE (status IN ('pending', 'confirmed'));
 
 -- 7. CROSS-TABLE AVAILABILITY INTEGRITY TRIGGERS
 CREATE OR REPLACE FUNCTION public.check_booking_against_blocked_dates()
