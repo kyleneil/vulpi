@@ -1,6 +1,7 @@
 -- ====================================================================
--- Vulpi — Seed / Activate Platform Admin User
+-- Vulpi — Seed & Repair Platform Admin User
 -- Email: vulpi.cdo@gmail.com
+-- Fixes GoTrue 500 "Database error querying schema" by converting all NULL tokens to ''
 -- ====================================================================
 
 DO $$
@@ -28,7 +29,14 @@ BEGIN
       updated_at,
       role,
       aud,
-      confirmation_token
+      confirmation_token,
+      recovery_token,
+      email_change,
+      email_change_token_new,
+      email_change_token_current,
+      phone_change,
+      phone_change_token,
+      reauthentication_token
     ) VALUES (
       v_admin_id,
       '00000000-0000-0000-0000-000000000000',
@@ -41,20 +49,36 @@ BEGIN
       NOW(),
       'authenticated',
       'authenticated',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
       ''
     );
   ELSE
-    -- If already exists, update password and confirm email
+    -- If already exists, update password, confirm email, and sanitize all NULL string columns
     UPDATE auth.users
-    SET encrypted_password = crypt('VulpiAdmin082118%', gen_salt('bf')),
-        email_confirmed_at = COALESCE(email_confirmed_at, NOW()),
-        updated_at = NOW(),
-        raw_app_meta_data = '{"provider":"email","providers":["email"]}'::jsonb,
-        raw_user_meta_data = jsonb_set(COALESCE(raw_user_meta_data, '{}'::jsonb), '{name}', '"Vulpi Platform Admin"')
+    SET 
+      encrypted_password = crypt('VulpiAdmin082118%', gen_salt('bf')),
+      email_confirmed_at = COALESCE(email_confirmed_at, NOW()),
+      updated_at = NOW(),
+      raw_app_meta_data = '{"provider":"email","providers":["email"]}'::jsonb,
+      raw_user_meta_data = jsonb_set(COALESCE(raw_user_meta_data, '{}'::jsonb), '{name}', '"Vulpi Platform Admin"'),
+      confirmation_token = COALESCE(confirmation_token, ''),
+      recovery_token = COALESCE(recovery_token, ''),
+      email_change = COALESCE(email_change, ''),
+      email_change_token_new = COALESCE(email_change_token_new, ''),
+      email_change_token_current = COALESCE(email_change_token_current, ''),
+      phone_change = COALESCE(phone_change, ''),
+      phone_change_token = COALESCE(phone_change_token, ''),
+      reauthentication_token = COALESCE(reauthentication_token, '')
     WHERE id = v_admin_id;
   END IF;
 
-  -- 3. Ensure identity exists in auth.identities (Required by Supabase Auth GoTrue)
+  -- 3. Ensure identity exists in auth.identities (UUID id)
   IF NOT EXISTS (SELECT 1 FROM auth.identities WHERE user_id = v_admin_id) THEN
     INSERT INTO auth.identities (
       id,
@@ -75,6 +99,11 @@ BEGIN
       NOW(),
       NOW()
     );
+  ELSE
+    UPDATE auth.identities
+    SET identity_data = jsonb_build_object('sub', v_admin_id::text, 'email', 'vulpi.cdo@gmail.com'),
+        updated_at = NOW()
+    WHERE user_id = v_admin_id;
   END IF;
 
   -- 4. Create an associated owner profile so admin can also test fleet management
@@ -96,5 +125,5 @@ BEGIN
     ) ON CONFLICT (user_id) DO NOTHING;
   END IF;
 
-  RAISE NOTICE 'Admin user vulpi.cdo@gmail.com successfully seeded/updated!';
+  RAISE NOTICE 'Admin user vulpi.cdo@gmail.com successfully repaired and activated!';
 END $$;
