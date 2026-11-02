@@ -6,53 +6,62 @@ export async function updateSession(request: NextRequest) {
     request,
   });
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  try {
+    const isOwnerRoute = request.nextUrl.pathname.startsWith('/owner');
+    const isAdminRoute = request.nextUrl.pathname.startsWith('/admin');
 
-  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
-      },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-        supabaseResponse = NextResponse.next({
-          request,
-        });
-        cookiesToSet.forEach(({ name, value, options }) =>
-          supabaseResponse.cookies.set(name, value, options)
-        );
-      },
-    },
-  });
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const isOwnerRoute = request.nextUrl.pathname.startsWith('/owner');
-  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin');
-
-  // 1. Strict Authentication Guard: Unauthenticated users cannot access owner or admin areas
-  if (!user && (isOwnerRoute || isAdminRoute)) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/login';
-    if (isAdminRoute) {
-      url.searchParams.set('admin', 'true');
+    // 1. Fast path for public routes: Avoid session calls and network overhead on public browse pages
+    if (!isOwnerRoute && !isAdminRoute) {
+      return supabaseResponse;
     }
-    url.searchParams.set('redirect', request.nextUrl.pathname);
-    return NextResponse.redirect(url);
-  }
 
-  // 2. Strict Role Guard: Only verified admin email can access /admin
-  if (user && isAdminRoute) {
-    const adminEmail = (process.env.ADMIN_EMAIL || 'admin@vulpi.ph').toLowerCase().trim();
-    const userEmail = (user.email || '').toLowerCase().trim();
-    if (userEmail !== adminEmail) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key';
+
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          supabaseResponse = NextResponse.next({
+            request,
+          });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          );
+        },
+      },
+    });
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    // 2. Strict Authentication Guard: Unauthenticated users cannot access owner or admin areas
+    if (!user) {
       const url = request.nextUrl.clone();
-      url.pathname = '/owner/dashboard';
+      url.pathname = '/login';
+      if (isAdminRoute) {
+        url.searchParams.set('admin', 'true');
+      }
+      url.searchParams.set('redirect', request.nextUrl.pathname);
       return NextResponse.redirect(url);
     }
+
+    // 3. Strict Role Guard: Only verified admin email can access /admin
+    if (isAdminRoute) {
+      const adminEmail = (process.env.ADMIN_EMAIL || 'admin@vulpi.ph').toLowerCase().trim();
+      const userEmail = (user.email || '').toLowerCase().trim();
+      if (userEmail !== adminEmail) {
+        const url = request.nextUrl.clone();
+        url.pathname = '/owner/dashboard';
+        return NextResponse.redirect(url);
+      }
+    }
+  } catch (error) {
+    console.error('[Middleware Error]', error);
   }
 
   return supabaseResponse;
