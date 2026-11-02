@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { STARTER_TERMS_TEMPLATE } from '@/lib/constants';
+import { isAdminEmail } from '@/lib/auth/admin';
 
 export async function loginAction(formData: FormData) {
   const email = (formData.get('email') as string)?.trim().toLowerCase();
@@ -11,7 +12,7 @@ export async function loginAction(formData: FormData) {
 
   // If logging in as admin or from the footer admin login, route to /admin
   if (!redirectTo || redirectTo === '/owner/dashboard') {
-    if (email === 'admin@vulpi.ph' || email.includes('admin')) {
+    if (isAdminEmail(email)) {
       redirectTo = '/admin';
     } else {
       redirectTo = '/owner/dashboard';

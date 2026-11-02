@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { SettingsClient } from './settings-client';
 import { redirect } from 'next/navigation';
+import { isAdminEmail } from '@/lib/auth/admin';
 import { Shield, KeyRound, User, Lock } from 'lucide-react';
 import Link from 'next/link';
 
@@ -27,8 +28,7 @@ export default async function OwnerSettingsPage() {
     is_verified: false,
   };
 
-  const adminEmail = (process.env.ADMIN_EMAIL || 'admin@vulpi.ph').toLowerCase().trim();
-  const isAdmin = (user.email || '').toLowerCase().trim() === adminEmail;
+  const isAdmin = isAdminEmail(user.email);
 
   return (
     <div className="space-y-8 max-w-4xl">

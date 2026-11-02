@@ -5,15 +5,18 @@ import { formatPHP, formatDateRangePH } from '@/lib/formatters';
 import { toggleOwnerVerificationAction, adminToggleCarActiveAction } from '@/app/actions/admin';
 import { Logo } from '@/components/brand/Logo';
 import { AdminProfileModal } from '@/components/admin/AdminProfileModal';
-import { Shield, Users, Car, Calendar, CheckCircle2, XCircle, ArrowLeft } from 'lucide-react';
+import { AddOwnerModal } from '@/components/admin/AddOwnerModal';
+import { ResetPasswordModal } from '@/components/admin/ResetPasswordModal';
+import { CopyInstructionsButton } from '@/components/admin/CopyInstructionsButton';
+import { isAdminEmail } from '@/lib/auth/admin';
+import { Shield, Users, Car, Calendar, CheckCircle2, XCircle, ArrowLeft, Mail } from 'lucide-react';
 import Link from 'next/link';
 
 export default async function AdminPage() {
   const userClient = await createClient();
   const { data: { user } } = await userClient.auth.getUser();
 
-  const adminEmail = (process.env.ADMIN_EMAIL || 'admin@vulpi.ph').toLowerCase().trim();
-  if (!user || user.email?.toLowerCase().trim() !== adminEmail) {
+  if (!user || !isAdminEmail(user.email)) {
     redirect('/login?admin=true');
   }
 
@@ -40,7 +43,7 @@ export default async function AdminPage() {
 
         <div className="flex items-center gap-3">
           {/* Admin Profile & Settings Modal Trigger */}
-          <AdminProfileModal adminEmail={user.email || adminEmail} />
+          <AdminProfileModal adminEmail={user.email || 'vulpi.cdo@gmail.com'} />
 
           <Link
             href="/"
@@ -84,15 +87,24 @@ export default async function AdminPage() {
         </div>
       </div>
 
-      {/* Section 1: Owners Oversight */}
-      <div className="bg-white rounded-3xl p-6 border border-[#F0DFC8] shadow-sm space-y-4">
-        <h2 className="text-lg font-black text-[#3B2216] flex items-center gap-2">
-          <Users className="w-5 h-5 text-[#1AA3A3]" /> Car Owners Oversight
-        </h2>
+      {/* Section 1: Owners Oversight & Account Provisioning */}
+      <div className="bg-white rounded-3xl p-6 border border-[#F0DFC8] shadow-sm space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-black text-[#3B2216] flex items-center gap-2">
+              <Users className="w-5 h-5 text-[#1AA3A3]" /> Car Owners Oversight
+            </h2>
+            <p className="text-xs text-[#735340]">Manage registered partners, provision new owner accounts, and issue credentials.</p>
+          </div>
+
+          {/* Provision New Owner Modal */}
+          <AddOwnerModal />
+        </div>
 
         {owners.length === 0 ? (
-          <div className="p-8 text-center bg-[#FFFBF5] rounded-2xl border border-dashed border-[#F0DFC8] text-xs text-[#735340]">
-            No partner owners registered yet. New signups from Cagayan de Oro will appear here for verification.
+          <div className="p-8 text-center bg-[#FFFBF5] rounded-2xl border border-dashed border-[#F0DFC8] text-xs text-[#735340] space-y-2">
+            <p>No partner owners registered yet.</p>
+            <p>Click &quot;<strong>+ Add / Provision Car Owner</strong>&quot; above to create accounts for local fleet operators.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -100,10 +112,11 @@ export default async function AdminPage() {
               <thead>
                 <tr className="border-b border-[#F0DFC8] text-[#735340] uppercase">
                   <th className="py-3 px-3">Owner / Business</th>
+                  <th className="py-3 px-3">Account Email</th>
                   <th className="py-3 px-3">Phone</th>
                   <th className="py-3 px-3">Pickup Location</th>
                   <th className="py-3 px-3">Status</th>
-                  <th className="py-3 px-3 text-right">Action</th>
+                  <th className="py-3 px-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F0DFC8]/50">
@@ -114,8 +127,9 @@ export default async function AdminPage() {
                   }
 
                   return (
-                    <tr key={owner.id}>
+                    <tr key={owner.id} className="hover:bg-[#FFFBF5]/60 transition-colors">
                       <td className="py-3 px-3 font-bold">{owner.name_or_business}</td>
+                      <td className="py-3 px-3 font-mono text-[11px] text-[#735340]">{owner.email}</td>
                       <td className="py-3 px-3">{owner.phone}</td>
                       <td className="py-3 px-3">{owner.pickup_location}</td>
                       <td className="py-3 px-3">
@@ -128,14 +142,29 @@ export default async function AdminPage() {
                         )}
                       </td>
                       <td className="py-3 px-3 text-right">
-                        <form action={handleToggle}>
-                          <button
-                            type="submit"
-                            className="px-3 py-1 rounded-lg border border-[#F0DFC8] hover:bg-[#FAF0E4] font-bold text-xs cursor-pointer"
-                          >
-                            {owner.is_verified ? 'Revoke Verification' : 'Verify Owner'}
-                          </button>
-                        </form>
+                        <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                          <CopyInstructionsButton
+                            ownerName={owner.name_or_business}
+                            email={owner.email}
+                          />
+
+                          {owner.user_id && (
+                            <ResetPasswordModal
+                              userId={owner.user_id}
+                              ownerName={owner.name_or_business}
+                              email={owner.email}
+                            />
+                          )}
+
+                          <form action={handleToggle}>
+                            <button
+                              type="submit"
+                              className="px-2.5 py-1 rounded-lg border border-[#F0DFC8] hover:bg-[#FAF0E4] font-bold text-[11px] cursor-pointer"
+                            >
+                              {owner.is_verified ? 'Revoke' : 'Verify'}
+                            </button>
+                          </form>
+                        </div>
                       </td>
                     </tr>
                   );

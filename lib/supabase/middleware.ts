@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { isAdminEmail } from '@/lib/auth/admin';
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -52,9 +53,7 @@ export async function updateSession(request: NextRequest) {
 
     // 3. Strict Role Guard: Only verified admin email can access /admin
     if (isAdminRoute) {
-      const adminEmail = (process.env.ADMIN_EMAIL || 'admin@vulpi.ph').toLowerCase().trim();
-      const userEmail = (user.email || '').toLowerCase().trim();
-      if (userEmail !== adminEmail) {
+      if (!isAdminEmail(user.email)) {
         const url = request.nextUrl.clone();
         url.pathname = '/owner/dashboard';
         return NextResponse.redirect(url);
