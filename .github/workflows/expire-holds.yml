@@ -1,0 +1,17 @@
+name: Expire 24-Hour Booking Holds
+
+on:
+  schedule:
+    # Runs every 30 minutes (100% Free on GitHub Actions)
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+jobs:
+  expire-holds:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Expire Holds Endpoint
+        run: |
+          curl -s -X POST "https://vulpi.vercel.app/api/cron/expire-holds" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json"
