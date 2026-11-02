@@ -66,7 +66,7 @@ BEGIN
       created_at,
       updated_at
     ) VALUES (
-      v_admin_id::text,
+      v_admin_id,
       v_admin_id,
       jsonb_build_object('sub', v_admin_id::text, 'email', 'vulpi.cdo@gmail.com'),
       'email',
