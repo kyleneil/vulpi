@@ -34,8 +34,8 @@ function LoginForm() {
 
   return (
     <div className="space-y-6">
-      <div className="text-center">
-        <Logo size="lg" className="justify-center" />
+      <div className="text-center flex flex-col items-center">
+        <Logo size="lg" href="/" className="justify-center" />
         <h2 className="mt-3 text-2xl font-black text-[#3B2216]">
           {isAdmin ? 'Platform Admin Sign In' : 'Sign In'}
         </h2>

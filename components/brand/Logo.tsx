@@ -21,10 +21,10 @@ export function Logo({ size = 'md', withTagline = false, href = '/', className =
     lg: 'md' as const,
   }[size];
 
-  const content = (
-    <div className={`inline-flex items-center gap-2 font-bold tracking-tight text-[#3B2216] select-none ${className}`}>
-      <Mascot size={mascotSize} />
-      <div className="flex flex-col justify-center">
+  const inner = (
+    <>
+      <Mascot size={mascotSize} className="pointer-events-none" />
+      <div className="flex flex-col justify-center pointer-events-none">
         <span className={`${textSize} font-black leading-tight tracking-tight flex items-center`}>
           Vulpi<span className="text-[#E8772E]">.</span>
         </span>
@@ -34,16 +34,23 @@ export function Logo({ size = 'md', withTagline = false, href = '/', className =
           </span>
         )}
       </div>
-    </div>
+    </>
   );
 
   if (href) {
     return (
-      <Link href={href} className="inline-flex items-center hover:opacity-90 transition-opacity">
-        {content}
+      <Link
+        href={href}
+        className={`inline-flex items-center gap-2 font-bold tracking-tight text-[#3B2216] select-none hover:opacity-90 transition-opacity cursor-pointer ${className}`}
+      >
+        {inner}
       </Link>
     );
   }
 
-  return content;
+  return (
+    <div className={`inline-flex items-center gap-2 font-bold tracking-tight text-[#3B2216] select-none ${className}`}>
+      {inner}
+    </div>
+  );
 }
