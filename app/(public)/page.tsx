@@ -2,12 +2,14 @@ import Link from 'next/link';
 import { Mascot } from '@/components/brand/Mascot';
 import { SearchForm } from '@/components/renter/SearchForm';
 import { CarCard } from '@/components/renter/CarCard';
-import { createClient } from '@/lib/supabase/server';
+import { createPublicClient } from '@/lib/supabase/public';
 import { CAR_TYPES, APP_CONFIG } from '@/lib/constants';
 import { ShieldCheck, Clock, CheckCircle2, PhoneCall, Sparkles, ArrowRight } from 'lucide-react';
 
+export const revalidate = 60;
+
 export default async function HomePage() {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
 
   const { data: cars } = await supabase
     .from('cars')

@@ -19,6 +19,8 @@ interface SearchPageProps {
   }>;
 }
 
+export const revalidate = 30;
+
 export default async function CarsSearchPage({ searchParams }: SearchPageProps) {
   const params = await searchParams;
   const startDate = params.start;

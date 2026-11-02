@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createPublicClient } from '@/lib/supabase/public';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { CarWithOwner } from '@/types';
 import { CarType, DestinationType } from '@/types/database';
@@ -42,10 +42,11 @@ export async function checkCarAvailability(
   startDate: string,
   endDate: string
 ): Promise<{ isAvailable: boolean; conflictReason?: string }> {
-  await expireStaleHolds();
+  // Fire hold cleanup in background without blocking availability read
+  expireStaleHolds().catch(() => {});
 
   try {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
 
     // 1. Check for overlapping active bookings (confirmed or active pending hold)
     const { data: conflictingBookings, error: bookingErr } = await supabase
@@ -107,12 +108,13 @@ export async function searchAvailableCars(params: {
   seats?: number;
   sortBy?: 'price_asc' | 'price_desc';
 }): Promise<CarWithOwner[]> {
-  await expireStaleHolds();
+  // Fire hold cleanup in background without blocking availability read
+  expireStaleHolds().catch(() => {});
 
   let liveCars: CarWithOwner[] | null = null;
 
   try {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
 
     let query = supabase
       .from('cars')
@@ -155,7 +157,7 @@ export async function searchAvailableCars(params: {
 
   // Filter against active conflicting bookings if database is live
   try {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     const { data: bookedCars, error: bookedErr } = await supabase
       .from('bookings')
       .select('car_id, status, hold_expires_at')

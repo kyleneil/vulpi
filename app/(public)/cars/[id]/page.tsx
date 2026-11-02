@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createPublicClient } from '@/lib/supabase/public';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -7,6 +7,8 @@ import { CarBookingCard } from '@/components/renter/CarBookingCard';
 import { formatPHP, formatDateRangePH, calculateRentalDays } from '@/lib/formatters';
 import { getSafeCarPhoto } from '@/lib/constants';
 import { DestinationType } from '@/types/database';
+
+export const revalidate = 60;
 import {
   Users,
   Fuel,
@@ -32,7 +34,7 @@ export default async function CarDetailPage({ params, searchParams }: CarDetailP
   const endDate = search.end;
   const destination = (search.dest as DestinationType) || 'within_cdo';
 
-  const supabase = await createClient();
+  const supabase = createPublicClient();
 
   let car: any = null;
   let calendarRanges: { startDate: string; endDate: string; type: 'booked' | 'blocked' }[] = [];
